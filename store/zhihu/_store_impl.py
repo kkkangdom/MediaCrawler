@@ -51,6 +51,10 @@ def calculate_number_of_files(file_store_path: str) -> int:
     """
     if not os.path.exists(file_store_path):
         return 1
+
+
+def _filter_db_fields(model_cls, data: Dict) -> Dict:
+    return {key: value for key, value in data.items() if hasattr(model_cls, key)}
     try:
         return max([int(file_name.split("_")[0]) for file_name in os.listdir(file_store_path)]) + 1
     except ValueError:
@@ -115,7 +119,8 @@ class ZhihuDbStoreImplement(AbstractStore):
             else:
                 if "add_ts" not in content_item:
                     content_item["add_ts"] = utils.get_current_timestamp()
-                new_content = ZhihuContent(**content_item)
+                filtered = _filter_db_fields(ZhihuContent, content_item)
+                new_content = ZhihuContent(**filtered)
                 session.add(new_content)
             await session.commit()
 

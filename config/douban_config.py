@@ -2,7 +2,7 @@
 # Copyright (c) 2025 relakkes@gmail.com
 #
 # This file is part of MediaCrawler project.
-# Repository: https://github.com/NanmiCoder/MediaCrawler/blob/main/config/weibo_config.py
+# Repository: https://github.com/NanmiCoder/MediaCrawler
 # GitHub: https://github.com/NanmiCoder
 # Licensed under NON-COMMERCIAL LEARNING LICENSE 1.1
 #
@@ -17,25 +17,10 @@
 # 详细许可条款请参阅项目根目录下的LICENSE文件。
 # 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
 
+# 豆瓣平台配置
 
-# 微博平台配置
+# 指定搜索的小组ID（可选）
+# 豆瓣小组示例：https://www.douban.com/group/123456/ 对应 ID 为 123456
+DOUBAN_GROUP_ID = ""  # 不指定时搜索全站
 
-# 搜索类型，具体的枚举值在media_platform/weibo/field.py中
-# real_time 对应时间降序
-WEIBO_SEARCH_TYPE = "real_time"
-
-# 指定微博ID列表
-WEIBO_SPECIFIED_ID_LIST = [
-    "4982041758140155",
-    # ........................
-]
-
-# 指定微博用户ID列表
-WEIBO_CREATOR_ID_LIST = [
-    "5756404150",
-    # ........................
-]
-
-# 是否开启微博爬取全文的功能，默认开启
-# 如果开启的话会增加被风控的概率，相当于一个关键词搜索请求会再遍历所有帖子的时候，再请求一次帖子详情
-ENABLE_WEIBO_FULL_TEXT = True
+# 豆瓣的其他高级配置可以在这里添加

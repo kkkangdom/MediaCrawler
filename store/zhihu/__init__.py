@@ -24,12 +24,15 @@ from typing import List
 import config
 from base.base_crawler import AbstractStore
 from model.m_zhihu import ZhihuComment, ZhihuContent, ZhihuCreator
-from ._store_impl import (ZhihuCsvStoreImplement,
-                                          ZhihuDbStoreImplement,
-                                          ZhihuJsonStoreImplement,
-                                          ZhihuSqliteStoreImplement,
-                                          ZhihuMongoStoreImplement,
-                                          ZhihuExcelStoreImplement)
+from ._store_impl import (
+    ZhihuCsvStoreImplement,
+    ZhihuDbStoreImplement,
+    ZhihuJsonStoreImplement,
+    ZhihuSqliteStoreImplement,
+    ZhihuMongoStoreImplement,
+    ZhihuExcelStoreImplement,
+)
+from .zhihu_store_media import ZhihuImageStore, ZhihuVideoStore
 from tools import utils
 from var import source_keyword_var
 
@@ -129,3 +132,25 @@ async def save_creator(creator: ZhihuCreator):
     local_db_item = creator.model_dump()
     local_db_item.update({"last_modify_ts": utils.get_current_timestamp()})
     await ZhihuStoreFactory.create_store().store_creator(local_db_item)
+
+
+async def update_zhihu_content_image(content_id: str, index: int, pic_content: bytes, url: str):
+    await ZhihuImageStore().store_image(
+        {
+            "content_id": content_id,
+            "index": index,
+            "pic_content": pic_content,
+            "url": url,
+        }
+    )
+
+
+async def update_zhihu_content_video(content_id: str, index: int, video_content: bytes, url: str):
+    await ZhihuVideoStore().store_video(
+        {
+            "content_id": content_id,
+            "index": index,
+            "video_content": video_content,
+            "url": url,
+        }
+    )

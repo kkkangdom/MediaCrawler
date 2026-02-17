@@ -2,7 +2,24 @@
 
 ## 项目文档
 
+### � 快速开始（推荐新手）
+
+- **豆瓣爬虫**
+  - [🎯 **3 步快速上手**](douban_get_started.md) ⭐ **新手必看** - 15 分钟快速体验
+
+### �🔗 完整使用指南
+
+- **豆瓣爬虫** 
+  - [📍 文档导航](douban_docs_navigation.md) - 快速查找你需要的文档
+  - [⚙️ 配置指南](douban_setup_guide.md) - 环境安装、Cookie 获取、配置步骤
+  - [📘 完整使用指南](douban_usage_guide.md) - 详细的豆瓣爬虫使用教程
+  - [⚡ 快速参考](douban_quick_reference.md) - 常用命令和配置速查表
+
+### 📋 系统文档
+
 - [项目架构文档](项目架构文档.md) - 系统架构、模块设计、数据流向（含 Mermaid 图表）
+- [Excel 导出指南](excel_export_guide.md) - 数据导出格式说明
+- [代理使用文档](代理使用.md) - 代理配置和使用方法
 
 ## 推荐：使用 uv 管理依赖
 

@@ -20,7 +20,7 @@
 
 # -*- coding: utf-8 -*-
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Iterable
 from urllib.parse import parse_qs, urlparse
 
 import execjs
@@ -55,6 +55,65 @@ def sign(url: str, cookies: str) -> Dict:
 class ZhihuExtractor:
     def __init__(self):
         pass
+
+    @staticmethod
+    def _normalize_urls(urls: Iterable[str]) -> List[str]:
+        cleaned = []
+        for url in urls:
+            if not url:
+                continue
+            if url.startswith("//"):
+                url = "https:" + url
+            cleaned.append(url)
+        # preserve order, remove duplicates
+        seen = set()
+        result = []
+        for url in cleaned:
+            if url in seen:
+                continue
+            seen.add(url)
+            result.append(url)
+        return result
+
+    def _extract_image_urls(self, html: str) -> List[str]:
+        if not html:
+            return []
+        selector = Selector(text=html)
+        candidates = selector.css("img::attr(data-original)").getall()
+        candidates += selector.css("img::attr(data-actualsrc)").getall()
+        candidates += selector.css("img::attr(data-src)").getall()
+        candidates += selector.css("img::attr(src)").getall()
+        return self._normalize_urls(candidates)
+
+    def _extract_video_urls(self, zvideo: Dict) -> List[str]:
+        if not zvideo:
+            return []
+        candidates: List[str] = []
+        video = zvideo.get("video") if isinstance(zvideo.get("video"), dict) else {}
+        if isinstance(video, dict):
+            playlist = video.get("playlist")
+            if isinstance(playlist, dict):
+                for item in playlist.values():
+                    if isinstance(item, dict):
+                        url = item.get("url") or item.get("play_url")
+                        if url:
+                            candidates.append(url)
+            elif isinstance(playlist, list):
+                for item in playlist:
+                    if isinstance(item, dict):
+                        url = item.get("url") or item.get("play_url")
+                        if url:
+                            candidates.append(url)
+            # fallback: search for url fields in video dict
+            for key, value in video.items():
+                if isinstance(value, str) and value.startswith("http"):
+                    candidates.append(value)
+        # fallback to zvideo-provided urls
+        for key in ("video_url", "play_url", "url"):
+            url = zvideo.get(key)
+            if isinstance(url, str) and url.startswith("http"):
+                candidates.append(url)
+        return self._normalize_urls(candidates)
 
     def extract_contents_from_search(self, json_data: Dict) -> List[ZhihuContent]:
         """
@@ -108,7 +167,8 @@ class ZhihuExtractor:
         res = ZhihuContent()
         res.content_id = answer.get("id")
         res.content_type = answer.get("type")
-        res.content_text = extract_text_from_html(answer.get("content", ""))
+        raw_content = answer.get("content", "")
+        res.content_text = extract_text_from_html(raw_content)
         res.question_id = answer.get("question").get("id")
         res.content_url = f"{zhihu_constant.ZHIHU_URL}/question/{res.question_id}/answer/{res.content_id}"
         res.title = extract_text_from_html(answer.get("title", ""))
@@ -117,6 +177,7 @@ class ZhihuExtractor:
         res.updated_time = answer.get("updated_time")
         res.voteup_count = answer.get("voteup_count", 0)
         res.comment_count = answer.get("comment_count", 0)
+        res.image_urls = self._extract_image_urls(raw_content)
 
         # extract author info
         author_info = self._extract_content_or_comment_author(answer.get("author"))
@@ -139,7 +200,8 @@ class ZhihuExtractor:
         res = ZhihuContent()
         res.content_id = article.get("id")
         res.content_type = article.get("type")
-        res.content_text = extract_text_from_html(article.get("content"))
+        raw_content = article.get("content", "")
+        res.content_text = extract_text_from_html(raw_content)
         res.content_url = f"{zhihu_constant.ZHIHU_ZHUANLAN_URL}/p/{res.content_id}"
         res.title = extract_text_from_html(article.get("title"))
         res.desc = extract_text_from_html(article.get("excerpt"))
@@ -147,6 +209,7 @@ class ZhihuExtractor:
         res.updated_time = article.get("updated_time", 0) or article.get("updated", 0)
         res.voteup_count = article.get("voteup_count", 0)
         res.comment_count = article.get("comment_count", 0)
+        res.image_urls = self._extract_image_urls(raw_content)
 
         # extract author info
         author_info = self._extract_content_or_comment_author(article.get("author"))
@@ -181,6 +244,12 @@ class ZhihuExtractor:
         res.desc = extract_text_from_html(zvideo.get("description"))
         res.voteup_count = zvideo.get("voteup_count")
         res.comment_count = zvideo.get("comment_count")
+        res.video_urls = self._extract_video_urls(zvideo)
+        res.image_urls = self._normalize_urls([
+            zvideo.get("thumbnail"),
+            zvideo.get("image_url"),
+            zvideo.get("cover"),
+        ])
 
         # extract author info
         author_info = self._extract_content_or_comment_author(zvideo.get("author"))

@@ -139,6 +139,42 @@ class ZhiHuClient(AbstractApiClient, ProxyRefreshMixin):
         base_url = (zhihu_constant.ZHIHU_URL if "/p/" not in uri else zhihu_constant.ZHIHU_ZHUANLAN_URL)
         return await self.request(method="GET", url=base_url + final_uri, headers=headers, **kwargs)
 
+    async def get_media(self, url: str) -> Optional[bytes]:
+        """
+        Download media content (image/video)
+        Args:
+            url: Media URL
+        Returns:
+            bytes or None
+        """
+        await self._refresh_proxy_if_expired()
+        async with httpx.AsyncClient(proxy=self.proxy, follow_redirects=True) as client:
+            try:
+                response = await client.request("GET", url, timeout=self.timeout)
+                response.raise_for_status()
+                if response.reason_phrase != "OK":
+                    utils.logger.error(
+                        f"[ZhiHuClient.get_media] request {url} err, res:{response.text}"
+                    )
+                    return None
+                return response.content
+            except httpx.HTTPError as exc:
+                utils.logger.error(
+                    f"[ZhiHuClient.get_media] {exc.__class__.__name__} for {exc.request.url} - {exc}"
+                )
+                return None
+
+    async def get_video_info(self, video_id: str) -> Dict:
+        """
+        Get zvideo detail info
+        Args:
+            video_id: zvideo id
+        Returns:
+            Dict
+        """
+        uri = f"/api/v4/zvideos/{video_id}"
+        return await self.get(uri)
+
     async def pong(self) -> bool:
         """
         Check if login status is still valid

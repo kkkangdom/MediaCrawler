@@ -19,7 +19,7 @@
 
 
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field
 
@@ -46,6 +46,9 @@ class ZhihuContent(BaseModel):
     user_nickname: str = Field(default="", description="User nickname")
     user_avatar: str = Field(default="", description="User avatar URL")
     user_url_token: str = Field(default="", description="User url_token")
+
+    image_urls: List[str] = Field(default_factory=list, description="Image URLs extracted from content")
+    video_urls: List[str] = Field(default_factory=list, description="Video URLs extracted from content")
 
 
 class ZhihuComment(BaseModel):

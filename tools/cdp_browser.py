@@ -125,6 +125,15 @@ class CDPBrowserManager:
                 playwright_proxy, user_agent
             )
 
+            # 7. 自动注入反检测脚本（stealth）
+            stealth_path = os.path.join(os.getcwd(), "libs", "stealth.min.js")
+            if os.path.exists(stealth_path):
+                try:
+                    await browser_context.add_init_script(path=stealth_path)
+                    utils.logger.info(f"[CDPBrowserManager] 自动注入反检测脚本: {stealth_path}")
+                except Exception as e:
+                    utils.logger.warning(f"[CDPBrowserManager] 注入反检测脚本失败: {e}")
+
             self.browser_context = browser_context
             return browser_context
 

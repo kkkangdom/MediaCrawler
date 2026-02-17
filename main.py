@@ -43,6 +43,8 @@ from media_platform.tieba import TieBaCrawler
 from media_platform.weibo import WeiboCrawler
 from media_platform.xhs import XiaoHongShuCrawler
 from media_platform.zhihu import ZhihuCrawler
+from media_platform.douban import DoubanCrawler
+from media_platform.ctrip import CtripCrawler
 from tools.async_file_writer import AsyncFileWriter
 from var import crawler_type_var
 
@@ -56,6 +58,8 @@ class CrawlerFactory:
         "wb": WeiboCrawler,
         "tieba": TieBaCrawler,
         "zhihu": ZhihuCrawler,
+        "douban": DoubanCrawler,
+        "ctrip": CtripCrawler,
     }
 
     @staticmethod
@@ -107,9 +111,13 @@ async def main() -> None:
         return
 
     crawler = CrawlerFactory.create_crawler(platform=config.PLATFORM)
-    await crawler.start()
-
-    _flush_excel_if_needed()
+    try:
+        await crawler.start()
+    except Exception as e:
+        print(f"[Main] Crawler encountered an error: {e}")
+    finally:
+        # Always flush Excel even if crawler encounters an error
+        _flush_excel_if_needed()
 
     # Generate wordcloud after crawling is complete
     # Only for JSON save mode

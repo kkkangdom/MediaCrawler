@@ -45,6 +45,7 @@ from var import crawler_type_var, source_keyword_var
 
 from .client import ZhiHuClient
 from .exception import DataFetchError
+from .field import SearchSort, SearchTime
 from .help import ZhihuExtractor, judge_zhihu_url
 from .login import ZhiHuLogin
 
@@ -62,6 +63,34 @@ class ZhihuCrawler(AbstractCrawler):
         self._extractor = ZhihuExtractor()
         self.cdp_manager = None
         self.ip_proxy_pool = None  # Proxy IP pool for automatic proxy refresh
+
+    async def _download_media_for_content(self, content: ZhihuContent) -> None:
+        if not config.ENABLE_GET_MEIDAS:
+            return
+        if not content:
+            return
+
+        # Download images
+        for index, url in enumerate(content.image_urls or [], start=1):
+            media = await self.zhihu_client.get_media(url)
+            if media:
+                await zhihu_store.update_zhihu_content_image(content.content_id, index, media, url)
+            await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
+
+        # Ensure video URLs are available for zvideo content
+        if content.content_type == constant.VIDEO_NAME and not content.video_urls:
+            try:
+                video_info = await self.zhihu_client.get_video_info(content.content_id)
+                content.video_urls = self._extractor._extract_video_urls(video_info)  # reuse extractor helper
+            except Exception as exc:
+                utils.logger.error(f"[ZhihuCrawler._download_media_for_content] fetch video info failed: {exc}")
+
+        # Download videos
+        for index, url in enumerate(content.video_urls or [], start=1):
+            media = await self.zhihu_client.get_media(url)
+            if media:
+                await zhihu_store.update_zhihu_content_video(content.content_id, index, media, url)
+            await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
 
     async def start(self) -> None:
         """
@@ -171,6 +200,8 @@ class ZhihuCrawler(AbstractCrawler):
                         await self.zhihu_client.get_note_by_keyword(
                             keyword=keyword,
                             page=page,
+                            sort=(SearchSort.CREATE_TIME if config.ZHIHU_SEARCH_SORT == "created_time" else SearchSort.UPVOTED_COUNT if config.ZHIHU_SEARCH_SORT == "upvoted_count" else SearchSort.DEFAULT),
+                            search_time=(SearchTime(config.ZHIHU_SEARCH_TIME) if config.ZHIHU_SEARCH_TIME in {t.value for t in SearchTime} else SearchTime.DEFAULT),
                         )
                     )
                     utils.logger.info(
@@ -187,6 +218,7 @@ class ZhihuCrawler(AbstractCrawler):
                     page += 1
                     for content in content_list:
                         await zhihu_store.update_zhihu_content(content)
+                        await self._download_media_for_content(content)
 
                     await self.batch_get_content_comments(content_list)
                 except DataFetchError:
@@ -298,6 +330,9 @@ class ZhihuCrawler(AbstractCrawler):
 
             # Get all comments of the creator's contents
             await self.batch_get_content_comments(all_content_list)
+            if config.ENABLE_GET_MEIDAS:
+                for content in all_content_list:
+                    await self._download_media_for_content(content)
 
     async def get_note_detail(
         self, full_note_url: str, semaphore: asyncio.Semaphore
@@ -385,6 +420,7 @@ class ZhihuCrawler(AbstractCrawler):
             note_detail = cast(ZhihuContent, note_detail)  # only for type check
             need_get_comment_notes.append(note_detail)
             await zhihu_store.update_zhihu_content(note_detail)
+            await self._download_media_for_content(note_detail)
 
         await self.batch_get_content_comments(need_get_comment_notes)
 

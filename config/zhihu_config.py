@@ -20,6 +20,14 @@
 
 # 知乎平台配置
 
+# 搜索排序方式（默认："created_time"=按发布时间降序）
+# 可选值："created_time" | "upvoted_count" | "default"
+ZHIHU_SEARCH_SORT = "created_time"
+
+# 搜索时间范围（默认不限制）
+# 可选值："" | "a_day" | "a_week" | "a_month" | "three_months" | "half_a_year" | "a_year"
+ZHIHU_SEARCH_TIME = ""
+
 # 指定知乎用户URL列表
 ZHIHU_CREATOR_URL_LIST = [
     "https://www.zhihu.com/people/yd1234567",
