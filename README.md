@@ -112,13 +112,6 @@ LOGIN_TYPE = "cookie"
 COOKIES = "..."
 ```
 
-### 📚 详细文档
-
-详细的豆瓣爬虫使用指南、Cookie 获取方法等，请查看 `docs/` 文件夹中的文档：
-- `docs/Douban_Quick_Start.md` - 快速开始指南
-- `docs/Cookie_Getting_Guide.md` - Cookie 获取详解
-- `docs/完整豆瓣爬虫使用文档.md` - 完整功能文档
-
 ---
 
 ## ⚠️ 已完成但未解决的功能
